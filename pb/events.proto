@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package pb;
+
+service Events {
+    rpc Track(stream ControllerState) returns (Empty) {}
+    rpc Color(stream ControllerColor) returns (stream ControllerColor) {}
+    rpc Signal(stream SignalMessage) returns (stream SignalMessage) {}
+}
+
+message Empty {}
+
+message ControllerState {
+    uint64 timestamp = 1;
+    string player = 2;
+    bytes state = 3;
+}
+
+message ControllerColor {
+    uint32 Red = 1;
+    uint32 Green = 2;
+    uint32 Blue = 3;
+}
+
+message SignalMessage {
+    uint32 signal = 1;
+}
