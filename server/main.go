@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -37,8 +38,14 @@ func (es *eventsServer) Track(stream pb.Events_TrackServer) error {
 			return err
 		}
 
+		jsonds4, err := json.MarshalIndent(ds4, " ", "")
+		if err != nil {
+			return err
+		}
+
+		tm.Clear()
 		tm.MoveCursor(1, 1)
-		tm.Printf("%+v", ds4)
+		tm.Print(string(jsonds4))
 		tm.Flush()
 	}
 }
@@ -70,12 +77,18 @@ func (es *eventsServer) Signal(stream pb.Events_SignalServer) error {
 }
 
 func main() {
+	// Accept a port flag from the command line, default to 1313
 	port := flag.Int("port", 1313, "-port=1313")
 	flag.Parse()
+
+	// Create a TCP listener
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	log.Printf("binding to: %d\n", *port)
+
+	// Create our event service and initialize the channels
 	es := &eventsServer{
 		colorchan:  make(chan *pb.ControllerColor, 1),
 		signalchan: make(chan *pb.SignalMessage, 1),
@@ -100,6 +113,7 @@ func main() {
 		}
 	}()
 
+	// Create a gRPC service and register our events service with it
 	grpcServer := grpc.NewServer()
 	pb.RegisterEventsServer(grpcServer, es)
 	grpcServer.Serve(lis)
